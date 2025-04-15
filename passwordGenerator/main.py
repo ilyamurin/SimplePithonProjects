@@ -149,7 +149,15 @@ def copy_to_clipboard():
 def update_generate_button_state(*args):
     """Enables or disables the Generate button based on character set selection."""
     active_charsets = get_active_character_sets()
-    generate_button.state(["!disabled"] if active_charsets else ["disabled"])
+    is_password_length = password_length.get().strip()
+    generate_button.state(["!disabled"] if active_charsets and is_password_length else ["disabled"])
+
+def update_copy_button_state(*args):
+    """Enables or disables the Copy button based on whether a password is generated."""
+    if generated_password.get():
+        copy_button.state(["!disabled"])
+    else:
+        copy_button.state(["disabled"])
 
 
 # === GUI Setup ===
@@ -177,8 +185,13 @@ def initialize_gui():
     generate_button = ttk.Button(root, text="Generate Password", command=generate_password)
     generate_button.pack(pady=10)
 
-    ttk.Entry(root, textvariable=generated_password, state="readonly", width=35).pack(**GUI_PADDING)
-    ttk.Button(root, text="Copy to Clipboard", command=copy_to_clipboard).pack(pady=10)
+    ttk.Entry(
+        root, textvariable=generated_password, state="readonly", width=30
+    ).pack(**GUI_PADDING)
+
+    global copy_button
+    copy_button = ttk.Button(root, text="Copy to Clipboard", command=copy_to_clipboard, state="disabled")
+    copy_button.pack(pady=10)
 
     # Bind Events
     root.bind("<Return>", generate_password)
@@ -188,6 +201,10 @@ def initialize_gui():
     include_uppercase_letters.trace_add("write", update_generate_button_state)
     include_lowercase_letters.trace_add("write", update_generate_button_state)
     update_generate_button_state()
+    update_copy_button_state()
+
+    # Monitor password generation to control the copy button's state
+    generated_password.trace_add("write", update_copy_button_state)
 
 
 # === Application Launch ===
